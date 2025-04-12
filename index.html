@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💸 Subscription Cost Calculator</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: lightgreen;
+            --border-color: #333;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background-color: var(--card-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1, h2 {
+            color: var(--accent-color);
+            margin-top: 0;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: #2d2d2d;
+            color: var(--text-color);
+            font-size: 16px;
+        }
+        
+        .result {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: var(--accent-color);
+        }
+        
+        .breakdown {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .breakdown-item {
+            background-color: #252525;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .breakdown-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .breakdown-value {
+            font-weight: bold;
+        }
+        
+        .alternative-purchases {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .purchase-item {
+            background-color: #252525;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .purchase-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .purchase-value {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💸 Subscription Cost Calculator</h1>
+        
+        <div class="card">
+            <h2>Subscription Details</h2>
+            <div class="input-group">
+                <label for="cost">Subscription Cost (£)</label>
+                <input type="number" id="cost" min="0" step="0.01" placeholder="e.g. 9.99">
+            </div>
+            
+            <div class="input-group">
+                <label for="recurrence">Recurrence</label>
+                <select id="recurrence">
+                    <option value="day">Daily</option>
+                    <option value="week">Weekly</option>
+                    <option value="month" selected>Monthly</option>
+                    <option value="year">Yearly</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="duration">Duration (e.g. "2y 6m 1w 3d")</label>
+                <input type="text" id="duration" placeholder="e.g. 1y 6m">
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Subscription Cost</h2>
+            <div class="result" id="total-cost">£0.00</div>
+        </div>
+        
+        <div class="card">
+            <h2>Subscription Breakdown</h2>
+            <div class="breakdown">
+                <div class="breakdown-item">
+                    <div class="breakdown-label">1 Day Cost</div>
+                    <div class="breakdown-value" id="day-cost">£0.00</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-label">1 Week Cost</div>
+                    <div class="breakdown-value" id="week-cost">£0.00</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-label">1 Month Cost</div>
+                    <div class="breakdown-value" id="month-cost">£0.00</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-label">1 Year Cost</div>
+                    <div class="breakdown-value" id="year-cost">£0.00</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-label">5 Years Cost</div>
+                    <div class="breakdown-value" id="5year-cost">£0.00</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-label">10 Years Cost</div>
+                    <div class="breakdown-value" id="10year-cost">£0.00</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-label">25 Years Cost</div>
+                    <div class="breakdown-value" id="25year-cost">£0.00</div>
+                </div>
+                <div class="breakdown-item">
+                    <div class="breakdown-label">50 Years Cost</div>
+                    <div class="breakdown-value" id="50year-cost">£0.00</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Time to Equal Alternative Purchases</h2>
+            <div class="alternative-purchases" id="time-to-purchase">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Number of Alternative Purchases</h2>
+            <div class="alternative-purchases" id="number-of-purchases">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const costInput = document.getElementById('cost');
+        const recurrenceSelect = document.getElementById('recurrence');
+        const durationInput = document.getElementById('duration');
+        const totalCostElement = document.getElementById('total-cost');
+        
+        // Breakdown elements
+        const dayCostElement = document.getElementById('day-cost');
+        const weekCostElement = document.getElementById('week-cost');
+        const monthCostElement = document.getElementById('month-cost');
+        const yearCostElement = document.getElementById('year-cost');
+        const fiveYearCostElement = document.getElementById('5year-cost');
+        const tenYearCostElement = document.getElementById('10year-cost');
+        const twentyFiveYearCostElement = document.getElementById('25year-cost');
+        const fiftyYearCostElement = document.getElementById('50year-cost');
+        
+        // Alternative purchases containers
+        const timeToPurchaseContainer = document.getElementById('time-to-purchase');
+        const numberOfPurchasesContainer = document.getElementById('number-of-purchases');
+
+        // Alternative purchases data
+        const alternativePurchases = [
+            { name: "A House", value: 500000 },
+            { name: "A Flat", value: 80000 },
+            { name: "A New Car", value: 12000 },
+            { name: "A New PC", value: 2200 },
+            { name: "A Used Car", value: 1500 },
+            { name: "A Holiday", value: 800 },
+            { name: "A Bicycle", value: 350 },
+            { name: "A Night Out", value: 85 },
+            { name: "A Train Ticket", value: 8 },
+            { name: "A Pint", value: 5.50 },
+            { name: "A Meal Deal", value: 3.50 }
+        ];
+
+        // Add event listeners
+        costInput.addEventListener('input', calculateCosts);
+        recurrenceSelect.addEventListener('change', calculateCosts);
+        durationInput.addEventListener('input', calculateCosts);
+
+        // Initial calculation
+        calculateCosts();
+
+        function calculateCosts() {
+            const cost = parseFloat(costInput.value) || 0;
+            const recurrence = recurrenceSelect.value;
+            
+            // Calculate daily cost based on recurrence
+            let dailyCost = 0;
+            let weeklyCost = 0;
+            let monthlyCost = 0;
+            let yearlyCost = 0;
+            
+            switch(recurrence) {
+                case 'day':
+                    dailyCost = cost;
+                    weeklyCost = cost * 7;
+                    monthlyCost = cost * 30;
+                    yearlyCost = cost * 365;
+                    break;
+                case 'week':
+                    dailyCost = cost / 7;
+                    weeklyCost = cost;
+                    monthlyCost = cost * 4;
+                    yearlyCost = cost * 52;
+                    break;
+                case 'month':
+                    dailyCost = cost / 30;
+                    weeklyCost = cost / 4;
+                    monthlyCost = cost;
+                    yearlyCost = cost * 12;
+                    break;
+                case 'year':
+                    dailyCost = cost / 365;
+                    weeklyCost = cost / 52;
+                    monthlyCost = cost / 12;
+                    yearlyCost = cost;
+                    break;
+            }
+            
+            // Calculate breakdown costs
+            dayCostElement.textContent = `£${dailyCost.toFixed(2)}`;
+            weekCostElement.textContent = `£${weeklyCost.toFixed(2)}`;
+            monthCostElement.textContent = `£${monthlyCost.toFixed(2)}`;
+            yearCostElement.textContent = `£${yearlyCost.toFixed(2)}`;
+            fiveYearCostElement.textContent = `£${(yearlyCost * 5).toFixed(2)}`;
+            tenYearCostElement.textContent = `£${(yearlyCost * 10).toFixed(2)}`;
+            twentyFiveYearCostElement.textContent = `£${(yearlyCost * 25).toFixed(2)}`;
+            fiftyYearCostElement.textContent = `£${(yearlyCost * 50).toFixed(2)}`;
+            
+            // Parse duration and calculate total cost
+            const durationText = durationInput.value.trim();
+            let totalCost = 0;
+            
+            if (durationText) {
+                let totalDays = 0;
+                
+                // Parse years
+                const yearsMatch = durationText.match(/(\d+)\s*y/);
+                if (yearsMatch) {
+                    totalDays += parseInt(yearsMatch[1]) * 365;
+                }
+                
+                // Parse months
+                const monthsMatch = durationText.match(/(\d+)\s*m/);
+                if (monthsMatch) {
+                    totalDays += parseInt(monthsMatch[1]) * 30;
+                }
+                
+                // Parse weeks
+                const weeksMatch = durationText.match(/(\d+)\s*w/);
+                if (weeksMatch) {
+                    totalDays += parseInt(weeksMatch[1]) * 7;
+                }
+                
+                // Parse days
+                const daysMatch = durationText.match(/(\d+)\s*d/);
+                if (daysMatch) {
+                    totalDays += parseInt(daysMatch[1]);
+                }
+                
+                // If no units are specified, assume days
+                if (!yearsMatch && !monthsMatch && !weeksMatch && !daysMatch) {
+                    const numberMatch = durationText.match(/\d+/);
+                    if (numberMatch) {
+                        totalDays = parseInt(numberMatch[0]);
+                    }
+                }
+                
+                totalCost = dailyCost * totalDays;
+                totalCostElement.textContent = `£${totalCost.toFixed(2)}`;
+            } else {
+                totalCostElement.textContent = '£0.00';
+            }
+            
+            // Calculate and display time to equal alternative purchases
+            timeToPurchaseContainer.innerHTML = '';
+            numberOfPurchasesContainer.innerHTML = '';
+            
+            alternativePurchases.forEach(item => {
+                // Time to equal purchase
+                const timeToPurchaseItem = document.createElement('div');
+                timeToPurchaseItem.className = 'purchase-item';
+                
+                const timeToPurchaseLabel = document.createElement('div');
+                timeToPurchaseLabel.className = 'purchase-label';
+                timeToPurchaseLabel.textContent = item.name;
+                
+                const timeToPurchaseValue = document.createElement('div');
+                timeToPurchaseValue.className = 'purchase-value';
+                
+                if (dailyCost > 0) {
+                    const daysNeeded = item.value / dailyCost;
+                    timeToPurchaseValue.textContent = formatTimePeriod(daysNeeded);
+                } else {
+                    timeToPurchaseValue.textContent = "N/A";
+                }
+                
+                timeToPurchaseItem.appendChild(timeToPurchaseLabel);
+                timeToPurchaseItem.appendChild(timeToPurchaseValue);
+                timeToPurchaseContainer.appendChild(timeToPurchaseItem);
+                
+                // Number of purchases
+                const numberOfPurchasesItem = document.createElement('div');
+                numberOfPurchasesItem.className = 'purchase-item';
+                
+                const numberOfPurchasesLabel = document.createElement('div');
+                numberOfPurchasesLabel.className = 'purchase-label';
+                numberOfPurchasesLabel.textContent = item.name;
+                
+                const numberOfPurchasesValue = document.createElement('div');
+                numberOfPurchasesValue.className = 'purchase-value';
+                
+                if (item.value > 0) {
+                    const numberOfItems = totalCost / item.value;
+                    numberOfPurchasesValue.textContent = formatNumber(numberOfItems);
+                } else {
+                    numberOfPurchasesValue.textContent = "N/A";
+                }
+                
+                numberOfPurchasesItem.appendChild(numberOfPurchasesLabel);
+                numberOfPurchasesItem.appendChild(numberOfPurchasesValue);
+                numberOfPurchasesContainer.appendChild(numberOfPurchasesItem);
+            });
+        }
+        
+        function formatTimePeriod(days) {
+            if (days >= 365) {
+                const years = Math.floor(days / 365);
+                const remainingDays = days % 365;
+                const months = Math.floor(remainingDays / 30);
+                if (months > 0) {
+                    return `${years}y ${months}m`;
+                }
+                return `${years}y`;
+            } else if (days >= 30) {
+                const months = Math.floor(days / 30);
+                const remainingDays = days % 30;
+                const weeks = Math.floor(remainingDays / 7);
+                if (weeks > 0) {
+                    return `${months}m ${weeks}w`;
+                }
+                return `${months}m`;
+            } else if (days >= 7) {
+                const weeks = Math.floor(days / 7);
+                const remainingDays = Math.floor(days % 7);
+                if (remainingDays > 0) {
+                    return `${weeks}w ${remainingDays}d`;
+                }
+                return `${weeks}w`;
+            } else {
+                return `${Math.floor(days)}d`;
+            }
+        }
+        
+        function formatNumber(num) {
+            // Round to 2 decimal places if needed
+            const rounded = Math.round(num * 100) / 100;
+            
+            // Check if the number is whole
+            if (rounded % 1 === 0) {
+                return rounded.toString();
+            }
+            
+            // Check if the number has only one decimal place when rounded to 1 decimal
+            const roundedToOne = Math.round(num * 10) / 10;
+            if (Math.abs(rounded - roundedToOne) < 0.0001) {
+                return roundedToOne.toFixed(1);
+            }
+            
+            // Otherwise return with 2 decimal places
+            return rounded.toFixed(2);
+        }
+    </script>
+</body>
+</html>
