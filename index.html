@@ -108,6 +108,26 @@
         .purchase-value {
             font-weight: bold;
         }
+        
+        .cost-per-use {
+            background-color: #252525;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .cost-per-use-label {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .cost-per-use-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -132,6 +152,11 @@
             </div>
             
             <div class="input-group">
+                <label for="uses">Uses Per Billing Cycle</label>
+                <input type="number" id="uses" min="1" step="1" placeholder="e.g. 10" value="1">
+            </div>
+            
+            <div class="input-group">
                 <label for="duration">Duration (e.g. "2y 6m 1w 3d")</label>
                 <input type="text" id="duration" placeholder="e.g. 1y 6m">
             </div>
@@ -144,6 +169,12 @@
         
         <div class="card">
             <h2>Subscription Breakdown</h2>
+            
+            <div class="cost-per-use">
+                <div class="cost-per-use-label">Cost Per Use</div>
+                <div class="cost-per-use-value" id="cost-per-use">£0.00</div>
+            </div>
+            
             <div class="breakdown">
                 <div class="breakdown-item">
                     <div class="breakdown-label">1 Day Cost</div>
@@ -199,8 +230,10 @@
         // Get DOM elements
         const costInput = document.getElementById('cost');
         const recurrenceSelect = document.getElementById('recurrence');
+        const usesInput = document.getElementById('uses');
         const durationInput = document.getElementById('duration');
         const totalCostElement = document.getElementById('total-cost');
+        const costPerUseElement = document.getElementById('cost-per-use');
         
         // Breakdown elements
         const dayCostElement = document.getElementById('day-cost');
@@ -234,6 +267,7 @@
         // Add event listeners
         costInput.addEventListener('input', calculateCosts);
         recurrenceSelect.addEventListener('change', calculateCosts);
+        usesInput.addEventListener('input', calculateCosts);
         durationInput.addEventListener('input', calculateCosts);
 
         // Initial calculation
@@ -242,6 +276,11 @@
         function calculateCosts() {
             const cost = parseFloat(costInput.value) || 0;
             const recurrence = recurrenceSelect.value;
+            const uses = parseInt(usesInput.value) || 1;
+            
+            // Calculate cost per use
+            const costPerUse = cost / uses;
+            costPerUseElement.textContent = `£${costPerUse.toFixed(2)}`;
             
             // Calculate daily cost based on recurrence
             let dailyCost = 0;
