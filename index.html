@@ -11,6 +11,7 @@
             --text-color: #e0e0e0;
             --accent-color: lightgreen;
             --border-color: #333;
+            --secondary-color: #b0b0b0;
         }
         
         body {
@@ -108,6 +109,12 @@
         .purchase-value {
             font-weight: bold;
         }
+
+        .purchase-price {
+            font-size: 12px;
+            color: var(--secondary-color);
+            margin-top: 2px;
+        }
         
         .cost-per-use {
             background-color: #252525;
@@ -128,11 +135,56 @@
             color: var(--accent-color);
             margin-top: 5px;
         }
+
+        .income-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .income-stat-item {
+            background-color: #252525;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .income-stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .income-stat-value {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .warning {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .highlight {
+            color: var(--accent-color);
+        }
+
+        .info {
+            font-size: 12px;
+            color: var(--secondary-color);
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>💸 Subscription Cost Calculator</h1>
+        
+        <div class="card">
+            <h2>Your Details</h2>
+            <div class="input-group">
+                <label for="monthly-income">Monthly Income After Tax (£)</label>
+                <input type="number" id="monthly-income" min="0" step="0.01" placeholder="e.g. 2000">
+            </div>
+        </div>
         
         <div class="card">
             <h2>Subscription Details</h2>
@@ -165,6 +217,30 @@
         <div class="card">
             <h2>Subscription Cost</h2>
             <div class="result" id="total-cost">£0.00</div>
+        </div>
+
+        <div class="card">
+            <h2>Income Statistics</h2>
+            <div class="income-stats" id="income-stats">
+                <!-- Will be populated by JavaScript -->
+                <div class="income-stat-item">
+                    <div class="income-stat-label">Percentage of Monthly Income</div>
+                    <div class="income-stat-value" id="percent-of-income">0%</div>
+                </div>
+                <div class="income-stat-item">
+                    <div class="income-stat-label">Hours Worked to Pay</div>
+                    <div class="income-stat-value" id="hours-worked">0h</div>
+                </div>
+                <div class="income-stat-item">
+                    <div class="income-stat-label">Annual Cost / Annual Income</div>
+                    <div class="income-stat-value" id="annual-percentage">0%</div>
+                </div>
+                <div class="income-stat-item">
+                    <div class="income-stat-label">Lifetime Cost (50y / Income)</div>
+                    <div class="income-stat-value" id="lifetime-percentage">0%</div>
+                </div>
+            </div>
+            <div class="info" id="income-warning"></div>
         </div>
         
         <div class="card">
@@ -228,12 +304,20 @@
 
     <script>
         // Get DOM elements
+        const monthlyIncomeInput = document.getElementById('monthly-income');
         const costInput = document.getElementById('cost');
         const recurrenceSelect = document.getElementById('recurrence');
         const usesInput = document.getElementById('uses');
         const durationInput = document.getElementById('duration');
         const totalCostElement = document.getElementById('total-cost');
         const costPerUseElement = document.getElementById('cost-per-use');
+        
+        // Income statistics elements
+        const percentOfIncomeElement = document.getElementById('percent-of-income');
+        const hoursWorkedElement = document.getElementById('hours-worked');
+        const annualPercentageElement = document.getElementById('annual-percentage');
+        const lifetimePercentageElement = document.getElementById('lifetime-percentage');
+        const incomeWarningElement = document.getElementById('income-warning');
         
         // Breakdown elements
         const dayCostElement = document.getElementById('day-cost');
@@ -265,6 +349,7 @@
         ];
 
         // Add event listeners
+        monthlyIncomeInput.addEventListener('input', calculateCosts);
         costInput.addEventListener('input', calculateCosts);
         recurrenceSelect.addEventListener('change', calculateCosts);
         usesInput.addEventListener('input', calculateCosts);
@@ -274,6 +359,7 @@
         calculateCosts();
 
         function calculateCosts() {
+            const monthlyIncome = parseFloat(monthlyIncomeInput.value) || 0;
             const cost = parseFloat(costInput.value) || 0;
             const recurrence = recurrenceSelect.value;
             const uses = parseInt(usesInput.value) || 1;
@@ -328,10 +414,9 @@
             // Parse duration and calculate total cost
             const durationText = durationInput.value.trim();
             let totalCost = 0;
+            let totalDays = 0;
             
             if (durationText) {
-                let totalDays = 0;
-                
                 // Parse years
                 const yearsMatch = durationText.match(/(\d+)\s*y/);
                 if (yearsMatch) {
@@ -370,6 +455,44 @@
                 totalCostElement.textContent = '£0.00';
             }
             
+            // Calculate income statistics
+            if (monthlyIncome > 0) {
+                // Calculate percentage of monthly income
+                const percentOfMonthlyIncome = (monthlyCost / monthlyIncome) * 100;
+                percentOfIncomeElement.textContent = `${percentOfMonthlyIncome.toFixed(2)}%`;
+                
+                // Calculate hours worked to pay (assuming 40 hour week, 4 weeks a month)
+                const hourlyWage = monthlyIncome / (40 * 4);
+                const hoursWorked = monthlyCost / hourlyWage;
+                hoursWorkedElement.textContent = `${hoursWorked.toFixed(1)}h`;
+                
+                // Calculate annual percentage
+                const annualIncome = monthlyIncome * 12;
+                const annualPercentage = (yearlyCost / annualIncome) * 100;
+                annualPercentageElement.textContent = `${annualPercentage.toFixed(2)}%`;
+                
+                // Calculate lifetime percentage (50 years)
+                const lifetimeIncome = annualIncome * 50;
+                const lifetimeCost = yearlyCost * 50;
+                const lifetimePercentage = (lifetimeCost / lifetimeIncome) * 100;
+                lifetimePercentageElement.textContent = `${lifetimePercentage.toFixed(2)}%`;
+                
+                // Display warning if percentage is too high
+                if (percentOfMonthlyIncome > 5) {
+                    incomeWarningElement.innerHTML = `<span class="warning">This subscription costs over 5% of your monthly income!</span>`;
+                } else if (percentOfMonthlyIncome > 2) {
+                    incomeWarningElement.innerHTML = `<span class="highlight">Note:</span> This subscription costs over 2% of your monthly income.`;
+                } else {
+                    incomeWarningElement.textContent = '';
+                }
+            } else {
+                percentOfIncomeElement.textContent = 'N/A';
+                hoursWorkedElement.textContent = 'N/A';
+                annualPercentageElement.textContent = 'N/A';
+                lifetimePercentageElement.textContent = 'N/A';
+                incomeWarningElement.textContent = 'Enter your monthly income to see these statistics.';
+            }
+            
             // Calculate and display time to equal alternative purchases
             timeToPurchaseContainer.innerHTML = '';
             numberOfPurchasesContainer.innerHTML = '';
@@ -383,6 +506,10 @@
                 timeToPurchaseLabel.className = 'purchase-label';
                 timeToPurchaseLabel.textContent = item.name;
                 
+                const timeToPurchasePrice = document.createElement('div');
+                timeToPurchasePrice.className = 'purchase-price';
+                timeToPurchasePrice.textContent = `£${item.value.toLocaleString()}`;
+                
                 const timeToPurchaseValue = document.createElement('div');
                 timeToPurchaseValue.className = 'purchase-value';
                 
@@ -394,6 +521,7 @@
                 }
                 
                 timeToPurchaseItem.appendChild(timeToPurchaseLabel);
+                timeToPurchaseItem.appendChild(timeToPurchasePrice);
                 timeToPurchaseItem.appendChild(timeToPurchaseValue);
                 timeToPurchaseContainer.appendChild(timeToPurchaseItem);
                 
@@ -404,6 +532,10 @@
                 const numberOfPurchasesLabel = document.createElement('div');
                 numberOfPurchasesLabel.className = 'purchase-label';
                 numberOfPurchasesLabel.textContent = item.name;
+                
+                const numberOfPurchasesPrice = document.createElement('div');
+                numberOfPurchasesPrice.className = 'purchase-price';
+                numberOfPurchasesPrice.textContent = `£${item.value.toLocaleString()}`;
                 
                 const numberOfPurchasesValue = document.createElement('div');
                 numberOfPurchasesValue.className = 'purchase-value';
@@ -416,6 +548,7 @@
                 }
                 
                 numberOfPurchasesItem.appendChild(numberOfPurchasesLabel);
+                numberOfPurchasesItem.appendChild(numberOfPurchasesPrice);
                 numberOfPurchasesItem.appendChild(numberOfPurchasesValue);
                 numberOfPurchasesContainer.appendChild(numberOfPurchasesItem);
             });
